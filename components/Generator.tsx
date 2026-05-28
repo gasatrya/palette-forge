@@ -1,12 +1,11 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useMemo, useState } from "react";
 import { generateScaleFromHex, guessPaletteName, GenerateConfig, STOPS } from "../lib/colors";
 import { MockUI } from "./MockUI";
 import { usePaletteStore, Palette } from "../store/store";
 import toast from "react-hot-toast";
-import { Copy, Save, SlidersHorizontal, ArrowRightLeft } from "lucide-react";
-import { wcagContrast, parseHex, oklch } from "culori";
+import { Save } from "lucide-react";
 
 interface GeneratorProps {
   initialHex?: string;
@@ -20,29 +19,18 @@ export function Generator({ initialHex = "#3b82f6", onGoToLibrary }: GeneratorPr
     chromaFalloff: 0.2,
     lightnessCurve: 0,
   });
-  const [paletteName, setPaletteName] = useState("");
+  const [paletteName, setPaletteName] = useState(() => guessPaletteName(initialHex));
 
-  const [palette, setPalette] = useState<Record<string, string>>({});
+  const palette = useMemo(() => {
+    if (/^#[0-9A-F]{6}$/i.test(baseHex)) {
+      return generateScaleFromHex(baseHex, config);
+    }
+
+    return {};
+  }, [baseHex, config]);
 
   const addPalette = usePaletteStore((state) => state.addPalette);
   const palettes = usePaletteStore((state) => state.palettes);
-
-  useEffect(() => {
-    // Basic valid hex check
-    if (/^#[0-9A-F]{6}$/i.test(baseHex)) {
-      const scale = generateScaleFromHex(baseHex, config);
-      setPalette(scale);
-      if (!paletteName) {
-        setPaletteName(guessPaletteName(baseHex));
-      }
-    }
-  }, [baseHex, config]); // Removed paletteName to not over-overwrite if user edits
-
-  // Re-generate name when hex changes fully if untouched?
-  // Simpler: Just generate one on mount and let user change.
-  useEffect(() => {
-    setPaletteName(guessPaletteName(baseHex));
-  }, [initialHex]);
 
   const handleCopy = (color: string) => {
     navigator.clipboard.writeText(color);
@@ -58,7 +46,7 @@ export function Generator({ initialHex = "#3b82f6", onGoToLibrary }: GeneratorPr
     // Check dupe
     let finalName = paletteName.trim().toLowerCase().replace(/\s+/g, "-");
     let counter = 1;
-    let baseName = finalName;
+    const baseName = finalName;
     while (palettes.some((p) => p.id === finalName)) {
       counter++;
       finalName = `${baseName}-${counter}`;
@@ -75,12 +63,6 @@ export function Generator({ initialHex = "#3b82f6", onGoToLibrary }: GeneratorPr
     if (onGoToLibrary) {
       onGoToLibrary();
     }
-  };
-
-  const isLightTextSafe = (hex: string) => {
-    const lchObj = oklch(parseHex(hex));
-    if (!lchObj) return false;
-    return lchObj.l < 0.6; // Rough threshold for forcing white/light text.
   };
 
   return (
@@ -211,7 +193,6 @@ export function Generator({ initialHex = "#3b82f6", onGoToLibrary }: GeneratorPr
           <div className="grid grid-cols-11 gap-px bg-gray-200 dark:bg-zinc-800 rounded-lg border border-gray-200 dark:border-zinc-800">
             {STOPS.map((stop) => {
               const hex = palette[stop] || "#ffffff";
-              const textLight = isLightTextSafe(hex);
               const isBase = stop === 500; // rough heuristic
               return (
                 <div

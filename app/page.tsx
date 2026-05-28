@@ -6,14 +6,7 @@ import { Library } from "../components/Library";
 import { ImportModal } from "../components/ImportModal";
 import { ExportModal } from "../components/ExportModal";
 import { usePaletteStore, Palette } from "../store/store";
-import {
-  Download,
-  Upload,
-  Palette as PaletteIcon,
-  Library as LibraryIcon,
-  Moon,
-  Sun,
-} from "lucide-react";
+import { Download, Upload, Moon, Sun } from "lucide-react";
 
 export default function Page() {
   const [activeView, setActiveView] = useState<"generator" | "library">("generator");
@@ -22,30 +15,27 @@ export default function Page() {
   const [showImport, setShowImport] = useState(false);
   const [exportTarget, setExportTarget] = useState<Palette | "all" | null>(null);
 
-  const [isDark, setIsDark] = useState(false);
+  const [isDark, setIsDark] = useState(() => {
+    if (typeof window === "undefined") {
+      return false;
+    }
+
+    const theme = localStorage.getItem("theme");
+    return (
+      theme === "dark" || (!theme && window.matchMedia("(prefers-color-scheme: dark)").matches)
+    );
+  });
   const palettes = usePaletteStore((state) => state.palettes);
 
-  // Initialize dark mode from user preference
+  // Keep the document class in sync with the selected theme.
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const isSystemDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-      const theme = localStorage.getItem("theme");
-      if (theme === "dark" || (!theme && isSystemDark)) {
-        setIsDark(true);
-        document.documentElement.classList.add("dark");
-      }
-    }
-  }, []);
+    document.documentElement.classList.toggle("dark", isDark);
+  }, [isDark]);
 
   const toggleDark = () => {
-    setIsDark(!isDark);
-    if (!isDark) {
-      document.documentElement.classList.add("dark");
-      localStorage.setItem("theme", "dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-      localStorage.setItem("theme", "light");
-    }
+    const nextIsDark = !isDark;
+    setIsDark(nextIsDark);
+    localStorage.setItem("theme", nextIsDark ? "dark" : "light");
   };
 
   const handleEditFromLibrary = (hex: string) => {

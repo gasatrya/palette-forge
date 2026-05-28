@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { usePaletteStore, Palette } from "../store/store";
 import { STOPS } from "../lib/colors";
-import { Copy, Trash2, Edit2, Download, Search, Settings2, Plus } from "lucide-react";
+import { Copy, Trash2, Edit2, Download, Search, Settings2 } from "lucide-react";
 import toast from "react-hot-toast";
 import { oklch, parseHex } from "culori";
 
@@ -13,7 +13,7 @@ interface LibraryProps {
 }
 
 export function Library({ onEdit, onExport }: LibraryProps) {
-  const { palettes, deletePalette, updatePalette, addPalette, clearLibrary } = usePaletteStore();
+  const { palettes, deletePalette, addPalette } = usePaletteStore();
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState<"date" | "name" | "hue">("date");
 
@@ -40,7 +40,7 @@ export function Library({ onEdit, onExport }: LibraryProps) {
   const handleDuplicate = (palette: Palette) => {
     let finalName = palette.id + "-copy";
     let counter = 1;
-    let baseName = finalName;
+    const baseName = finalName;
     while (palettes.some((p) => p.id === finalName)) {
       counter++;
       finalName = `${baseName}-${counter}`;
@@ -90,7 +90,7 @@ export function Library({ onEdit, onExport }: LibraryProps) {
             <select
               className="bg-transparent font-medium text-gray-900 dark:text-white outline-none cursor-pointer"
               value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as any)}
+              onChange={(e) => setSortBy(e.target.value as "date" | "name" | "hue")}
             >
               <option value="date">Newest</option>
               <option value="name">Name</option>

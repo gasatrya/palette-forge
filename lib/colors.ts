@@ -1,4 +1,4 @@
-import { oklch, formatHex, parseHex, interpolate, clampChroma } from "culori";
+import { oklch, formatHex, parseHex, clampChroma } from "culori";
 
 export const STOPS = [50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950];
 
@@ -36,7 +36,7 @@ export function generateScaleFromHex(
 
   const l = colorOkLch.l;
   const c = colorOkLch.c || 0;
-  let h = colorOkLch.h || 0;
+  const h = colorOkLch.h || 0;
 
   // Find the closest stop based on lightness
   let closestStop = 500;
@@ -91,7 +91,7 @@ export function generateScaleFromHex(
 
 export function guessPaletteName(hex: string): string {
   const c = oklch(parseHex(hex));
-  if (!c || c.c < 0.02) return "slate";
+  if (!c || (c.c ?? 0) < 0.02) return "slate";
 
   const h = c.h || 0;
   if (h >= 0 && h < 30) return "rose";
@@ -112,7 +112,7 @@ export function extractHexFromUiColorsUrl(url: string): string | null {
     const u = new URL(url);
     const color = u.searchParams.get("color");
     if (color && /^[0-9A-Fa-f]{6}$/.test(color)) return "#" + color;
-  } catch (e) {
+  } catch {
     // If it's not a full URL but maybe `?color=...`
     const match = url.match(/\?color=([0-9A-Fa-f]{6})/);
     if (match) return "#" + match[1];
@@ -126,23 +126,25 @@ export function parseTailwindConfigSnippet(text: string): Record<string, Record<
 
   try {
     // Attempt standard JSON first
-    const json = JSON.parse(text);
-    if (typeof json === "object") {
+    const json: unknown = JSON.parse(text);
+    if (typeof json === "object" && json !== null) {
+      const parsed = json as Record<string, unknown>;
+
       // if we pasted a single palette { "50": "...", "100": "..." }
-      if (json["50"] && typeof json["50"] === "string") {
-        result["imported-palette"] = json;
+      if (typeof parsed["50"] === "string") {
+        result["imported-palette"] = parsed as Record<string, string>;
         return result;
       }
 
       // if we pasted a full library { "blue": { "50": "..." } }
-      for (const [key, val] of Object.entries(json)) {
-        if (typeof val === "object" && val !== null && (val as any)["50"]) {
+      for (const [key, val] of Object.entries(parsed)) {
+        if (typeof val === "object" && val !== null && "50" in val) {
           result[key] = val as Record<string, string>;
         }
       }
       if (Object.keys(result).length > 0) return result;
     }
-  } catch (e) {
+  } catch {
     // Proceed to Regex matching for JS objects
   }
 

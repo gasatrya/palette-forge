@@ -1,8 +1,17 @@
 declare module "culori" {
-  export function oklch(color: any): any;
-  export function formatHex(color: any): string;
-  export function parseHex(hex: string): any;
-  export function interpolate(colors: any[], mode?: string): any;
-  export function clampChroma(color: any, mode: string): any;
-  export function wcagContrast(colorBase: any, colorOther: any): number;
+  export interface OklchColor {
+    mode?: "oklch";
+    l: number;
+    c?: number;
+    h?: number;
+  }
+
+  export type ColorInput = OklchColor | Record<string, unknown> | string | null | undefined;
+
+  export function oklch(color: ColorInput): OklchColor | undefined;
+  export function formatHex(color: ColorInput): string;
+  export function parseHex(hex: string): ColorInput;
+  export function interpolate(colors: ColorInput[], mode?: string): (value: number) => ColorInput;
+  export function clampChroma(color: ColorInput, mode: string): ColorInput;
+  export function wcagContrast(colorBase: ColorInput, colorOther: ColorInput): number;
 }

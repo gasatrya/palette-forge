@@ -1,7 +1,6 @@
 "use client";
 
 import React from "react";
-import { Palette } from "../store/store";
 
 interface MockUIProps {
   palette: Record<string, string>;
