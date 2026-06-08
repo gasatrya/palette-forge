@@ -15,22 +15,25 @@ export default function Page() {
   const [showImport, setShowImport] = useState(false);
   const [exportTarget, setExportTarget] = useState<Palette | "all" | null>(null);
 
-  const [isDark, setIsDark] = useState(() => {
-    if (typeof window === "undefined") {
-      return false;
-    }
+  const [isDark, setIsDark] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
+  useEffect(() => {
     const theme = localStorage.getItem("theme");
-    return (
-      theme === "dark" || (!theme && window.matchMedia("(prefers-color-scheme: dark)").matches)
-    );
-  });
+    const systemDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setIsDark(theme === "dark" || (!theme && systemDark));
+    setMounted(true);
+  }, []);
+
   const palettes = usePaletteStore((state) => state.palettes);
 
   // Keep the document class in sync with the selected theme.
   useEffect(() => {
-    document.documentElement.classList.toggle("dark", isDark);
-  }, [isDark]);
+    if (mounted) {
+      document.documentElement.classList.toggle("dark", isDark);
+    }
+  }, [isDark, mounted]);
 
   const toggleDark = () => {
     const nextIsDark = !isDark;
@@ -93,7 +96,7 @@ export default function Page() {
               className="p-2 text-gray-500 hover:text-gray-900 dark:hover:text-white rounded hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"
               title="Toggle Dark Mode"
             >
-              {isDark ? <Sun size={20} /> : <Moon size={20} />}
+              {mounted && isDark ? <Sun size={20} /> : <Moon size={20} />}
             </button>
           </div>
         </div>
